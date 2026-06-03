@@ -1,0 +1,6 @@
+py -3.10 -m venv .venv
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install mediapipe==0.10.9 opencv-python numpy
+python -m pip install pyserial
