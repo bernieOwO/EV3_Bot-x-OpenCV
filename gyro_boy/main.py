@@ -24,7 +24,7 @@ server_socket.listen(1)
 print("Waiting for Connection...")
 conn, addr = server_socket.accept()
 conn.setblocking(False)  # 設為非阻塞，防止 recv 卡住自平衡
-print("Connected to {}".format(addr))
+print("Connected to", addr)
 
 # 3. 陀螺儀校準 (保持機器人靜止)
 print("Calibrating Gyro... Please keep robot still.")
@@ -46,7 +46,7 @@ while True:
         break
 
 gyro_offset = gyro_sum / 200
-print("Gyro Calibrated Successfully! Offset: {}".format(gyro_offset))
+print("Gyro Calibrated Successfully! Offset:", gyro_offset)
 
 # 4. 獨立變數初始化
 robot_body_angle = 0
@@ -67,7 +67,7 @@ try:
         try:
             cmd = conn.recv(1024).decode().strip()
             if cmd:
-                print("Received Command: {}".format(cmd))
+                print("Received Command:", cmd)
                 if cmd == 'F':
                     drive_speed = 120
                     steering = 0
@@ -130,7 +130,7 @@ try:
             wait(wait_time)
 
 except Exception as e:
-    print("Unexpected Error: {}".format(e))
+    print("Unexpected Error:", e)
 
 finally:
     print("Stopping Motors and Closing Connection...")
