@@ -18,7 +18,7 @@ fontFace = cv2.FONT_HERSHEY_SIMPLEX           # 設定文字字型
 lineType = cv2.LINE_AA                        # 設定文字線條樣式
 
 # ===== EV3 設定 =====
-ROBOT_IP = '192.168.2.2'
+ROBOT_IP = '169.254.215.144'
 robot = rc(ROBOT_IP)
 robot.connect()
 

@@ -9,11 +9,11 @@ class RobotController:
     
     def connect(self):
         try:
-            self.client.connect(self.ip, self.port)
+            self.client.connect((self.ip, self.port))
             self.connected = True
             print("Connected!")
         except Exception as e:
-            print(f"Connect Failed: {e}")
+            print("Connect Failed:", e)
     
     def send_command(self, cmd):
         if self.connected:
