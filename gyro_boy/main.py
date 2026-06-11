@@ -55,6 +55,7 @@ wheel_angle = 0
 drive_speed = 0
 steering = 0
 motor_position_change = [0, 0, 0, 0]
+is_fallen = False
 
 print("Start Balancing Control Loop...")
 
@@ -76,10 +77,10 @@ try:
                     steering = 0
                 elif cmd == 'L':
                     drive_speed = 0
-                    steering = -25
+                    steering = -20
                 elif cmd == 'R':
                     drive_speed = 0
-                    steering = 25
+                    steering = 20
                 elif cmd == 'S':
                     drive_speed = 0
                     steering = 0
@@ -121,13 +122,26 @@ try:
         if abs(output_power) < 100:
             fall_timer.reset()
         elif fall_timer.time() > 1000:
-            print("Robot fell down!")
-            break
+            if not is_fallen:
+                print("Robot fell down! Standing by...")
+                is_fallen = True
 
-        # 確保整個大迴圈剛好固定在 10ms 週期
-        wait_time = 10 - loop_timer.time()
-        if wait_time > 0:
-            wait(wait_time)
+        # 根據是否跌倒來控制馬達
+        if is_fallen:
+            left_motor.stop()
+            right_motor.stop()
+            
+            # 檢查是否被手動扶正了（例如車身角度絕對值小於 5 度）
+            if abs(robot_body_angle) < 5:
+                print("Robot is back up! Resuming balance...")
+                is_fallen = False
+                robot_body_angle = 0  # 重設角度
+                motor_position_sum = left_motor.angle() + right_motor.angle() # 重設馬達編碼器
+                fall_timer.reset()
+        else:
+            # 原本的驅動馬達邏輯
+            left_motor.dc(output_power - steering)
+            right_motor.dc(output_power + steering)
 
 except Exception as e:
     print("Unexpected Error:", e)
