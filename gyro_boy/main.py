@@ -9,11 +9,13 @@ import socket
 ev3 = EV3Brick()
 left_motor = Motor(Port.A)
 right_motor = Motor(Port.D)
-gyro_sensor = GyroSensor(Port.S2)
+gyro_sensor = GyroSensor(Port.S3)
 
 # 初始化計時器
 loop_timer = StopWatch()
 fall_timer = StopWatch()
+standby_timer = StopWatch()
+print("Start Balancing Control Loop...")
 
 # 2. 設定 Socket 伺服器
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,7 +87,6 @@ try:
                     drive_speed = 0
                     steering = 0
         except socket.error:
-            # 沒有收到新指令時，直接略過維持前一次的動作
             pass
 
         # 【B】自平衡演算法 (控制週期固定為 0.01 秒)
@@ -101,7 +102,6 @@ try:
         motor_position_change.insert(0, change)
         del motor_position_change[-1]
         
-        # 💡 注意：原地旋轉時由於兩輪反轉，車輪轉速總和(wheel_rate)變化不大，有助於維持平衡
         wheel_angle += change - drive_speed * 0.01
         wheel_rate = sum(motor_position_change) / 0.04
 
@@ -114,34 +114,50 @@ try:
         if output_power < -100:
             output_power = -100
 
-        # 驅動馬達 (直接套用修正後的原地旋轉驅動邏輯)
-        left_motor.dc(output_power - steering)
-        right_motor.dc(output_power + steering)
+        # --- 修正後的跌倒與扶正邏輯 ---
 
-        # 跌倒偵測
+        # 1. 跌倒偵測：如果功率滿載(100)持續超過 1 秒，判定跌倒
         if abs(output_power) < 100:
             fall_timer.reset()
         elif fall_timer.time() > 1000:
             if not is_fallen:
                 print("Robot fell down! Standing by...")
                 is_fallen = True
+                standby_timer.reset()  # 剛跌倒時，先重設扶正計時器
 
-        # 根據是否跌倒來控制馬達
+        # 2. 根據狀態控制馬達與進行復原
         if is_fallen:
+            # 跌倒期間安全機制：馬達強制停止
             left_motor.stop()
             right_motor.stop()
             
-            # 檢查是否被手動扶正了（例如車身角度絕對值小於 5 度）
+            # 檢查車身是否處於接近垂直的狀態 (例如正負 5 度內)
             if abs(robot_body_angle) < 5:
-                print("Robot is back up! Resuming balance...")
-                is_fallen = False
-                robot_body_angle = 0  # 重設角度
-                motor_position_sum = left_motor.angle() + right_motor.angle() # 重設馬達編碼器
-                fall_timer.reset()
+                # 如果角度對了，但還沒滿 3 秒，就不斷檢查時間
+                if standby_timer.time() > 3000:
+                    print("Robot held stable for 3 seconds! Resuming balance...")
+                    is_fallen = False
+                    
+                    # 【核心重設】重新將所有物理量歸零，準備完美重新啟動
+                    robot_body_angle = 0  
+                    left_motor.reset_angle(0)   # 直接重設馬達硬體編碼器
+                    right_motor.reset_motor_angle = 0
+                    motor_position_sum = 0
+                    wheel_angle = 0
+                    
+                    fall_timer.reset()          # 重設跌倒計時器
+            else:
+                # 💡 關鍵：只要車身角度一偏離正負 5 度（代表還在晃、或還沒扶好）
+                # 就一直重設計時器，逼它必須「重新累積」連續的 3 秒鐘！
+                standby_timer.reset()
+                
         else:
-            # 原本的驅動馬達邏輯
+            # 只有在「沒跌倒」的正常狀態下，才允許輸出 PID 功率
             left_motor.dc(output_power - steering)
             right_motor.dc(output_power + steering)
+
+        # 確保迴圈週期維持在 0.01 秒附近
+        wait(10)
 
 except Exception as e:
     print("Unexpected Error:", e)
