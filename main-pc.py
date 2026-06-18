@@ -32,7 +32,7 @@ def hand_gesture(hand):
     gesture = "UNKNOWN"
 
     if -135 <= angle < -45:
-        gesture = "FOWARD"
+        gesture = "FORWARD"
     elif 45 <= angle < 135:
         gesture = "BACKWARD"
     elif -45 <= angle < 45:
@@ -86,7 +86,7 @@ with mp_hands.Hands(
                     gesture = hand_gesture(finger_points)# 偵測手勢方向
 
                     # 發送訊息到EV3
-                    if gesture == "FOWARD":
+                    if gesture == "FORWARD":
                         robot.send_command('F')
                     elif gesture == "BACKWARD":
                         robot.send_command('B')
