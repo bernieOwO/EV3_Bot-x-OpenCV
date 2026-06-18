@@ -18,7 +18,7 @@ fontFace = cv2.FONT_HERSHEY_SIMPLEX           # 設定文字字型
 lineType = cv2.LINE_AA                        # 設定文字線條樣式
 
 # ===== EV3 設定 =====
-ROBOT_IP = '169.254.215.144'
+ROBOT_IP = '169.254.172.151'
 robot = rc(ROBOT_IP)
 robot.connect()
 
@@ -30,7 +30,9 @@ def hand_gesture(hand):
     angle = math.degrees(math.atan2(dy, dx))
 
     gesture = "UNKNOWN"
-    if -135 <= angle < -45:
+    if dx == 0 or dy == 0:
+        gesture = "STOP"
+    elif -135 <= angle < -45:
         gesture = "FOWARD"
     elif 45 <= angle < 135:
         gesture = "BACKWARD"
@@ -93,7 +95,7 @@ with mp_hands.Hands(
                         robot.send_command('R')
                     elif gesture == "LEFT":
                         robot.send_command('L')
-                    else:
+                    elif gesture == "STOP":
                         robot.send_command('S')
 
                     cv2.putText(
@@ -101,7 +103,7 @@ with mp_hands.Hands(
                         gesture,
                         (30, 120),
                         fontFace,
-                        5,
+                        2,
                         (255, 255, 255),
                         10,
                         lineType

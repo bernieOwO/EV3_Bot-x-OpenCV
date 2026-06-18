@@ -9,7 +9,7 @@ import socket
 ev3 = EV3Brick()
 left_motor = Motor(Port.A)
 right_motor = Motor(Port.D)
-gyro_sensor = GyroSensor(Port.S2)
+gyro_sensor = GyroSensor(Port.S3)
 
 # 初始化計時器
 loop_timer = StopWatch()
